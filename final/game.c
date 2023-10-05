@@ -4,6 +4,7 @@
 #include "navswitch.h"
 #include "pacer.h"
 #include "stdlib.h"
+#include "ir_serial.h"
 
 #define BAR_LENGTH 7
 int8_t DELTA_ROW = 1;
@@ -28,8 +29,6 @@ int8_t min(int8_t op1, int8_t op2)
     return op1 > op2 ? op2 : op1;
 }
 
-// int8_t generate_random(int8_t lower, int8_t upper)
-
 int main (void)
 {
     system_init();
@@ -37,11 +36,50 @@ int main (void)
     pacer_init (100);
     navswitch_init();
 
-    Vector_t velocity = {2, 1};
+    Vector_t velocity = {1, 1};
     Vector_t ball_position = {LEDMAT_ROWS_NUM / 2, 1};
     Vector_t bar_position = {(LEDMAT_ROWS_NUM / 2) - (BAR_LENGTH / 2), LEDMAT_COLS_NUM - 1};
     int8_t toggle = 0;
     int8_t count = 0;
+
+    int8_t order = -1;
+    int8_t ret;
+
+
+    // Handle who starts
+    while (order = -1) {
+        navswitch_update ();
+        int8_t data;
+
+
+        // On button push, sends a data package 1: "I want to be first!"
+        if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
+            for (int i= 0; i < 5; i++) {
+                ir_serial_transmit(1);
+            }
+        }
+
+        // Receives any messages sent by the other board
+        ret = ir_serial_receive (&data);
+        if (ret == IR_SERIAL_OK)
+        {
+            switch (data) {
+                // other board has already said they want to be first.
+                case 1:
+                    order = 2;
+                    ir_serial_transmit(2); // send an acknowledgement
+
+                // other board has admitted defeat, this board is first
+                case 2:
+                    order = 1;
+            }
+        }
+    }
+
+
+
+
+
     while (1)
     {
         pacer_wait();
@@ -52,7 +90,7 @@ int main (void)
                 (0 <= (ball_position.x - bar_position.x)) && 
                 ((ball_position.x - bar_position.x) < BAR_LENGTH)) {
                 // should bounce if hits the paddle
-                velocity.y *= -1 * ((rand() % 3) - 1);
+                velocity.y *= -1;
             }
             if (ball_position.y == 4) {
                 // hit the wall, dies
@@ -64,7 +102,7 @@ int main (void)
             if (ball_position.y < 0 && velocity.y == -1) {
                 // should bounce if hits the back wall
                 // TODO: removed once second board added
-                velocity.y *= -1 * ((rand() % 2) + 1);
+                velocity.y *= -1;
             }
             if (ball_position.x == 0 || ball_position.x == 6) {
                 // should bounce if it hits the sides
