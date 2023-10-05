@@ -5,12 +5,17 @@
 #include "pacer.h"
 #include "stdlib.h"
 #include "ir_serial.h"
+#include "tinygl.h"
+#include "../fonts/font5x7_1.h"
 
 #define BAR_LENGTH 7
 int8_t DELTA_ROW = 1;
 int8_t DELTA_COL = 1;
 
 int8_t BAR_MASK = (1 << BAR_LENGTH) - 1;
+
+#define PACER_RATE 500
+#define MESSAGE_RATE 10
 
 
 typedef struct
@@ -29,12 +34,23 @@ int8_t min(int8_t op1, int8_t op2)
     return op1 > op2 ? op2 : op1;
 }
 
+void display_character (char character)
+{
+    char buffer[2];
+    buffer[0] = character;
+    buffer[1] = '\0';
+    tinygl_text (buffer);
+}
+
 int main (void)
 {
     system_init();
     ledmat_init();
     pacer_init (100);
     navswitch_init();
+    tinygl_init (PACER_RATE);
+    tinygl_font_set (&font5x7_1);
+    tinygl_text_speed_set (MESSAGE_RATE);
 
     Vector_t velocity = {1, 1};
     Vector_t ball_position = {LEDMAT_ROWS_NUM / 2, 1};
@@ -63,6 +79,7 @@ int main (void)
         ret = ir_serial_receive (&data);
         if (ret == IR_SERIAL_OK)
         {
+            display_character ('0' + data);
             switch (data) {
                 // other board has already said they want to be first.
                 case 1:
