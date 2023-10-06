@@ -51,6 +51,7 @@ int main (void)
     tinygl_init (PACER_RATE);
     tinygl_font_set (&font5x7_1);
     tinygl_text_speed_set (MESSAGE_RATE);
+    ir_serial_init();
 
     Vector_t velocity = {1, 1};
     Vector_t ball_position = {LEDMAT_ROWS_NUM / 2, 1};
@@ -62,8 +63,28 @@ int main (void)
     int8_t ret;
 
 
-    // Handle who starts
-    while (order = -1) {
+    // // Handle who starts
+    // while (order == -1) {
+    //     navswitch_update ();
+    //     int8_t data;
+
+    //     ret = ir_serial_receive (&data);
+    //     if (ret == IR_SERIAL_OK)
+    //     {
+    //         display_character ('0' + data);
+    //     }
+
+    //     // // On button push, sends a data package 1: "I want to be first!"
+    //     // if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
+    //     //     for (int i= 0; i < 5; i++) {
+    //     //         display_character ('1');
+    //     //         ir_serial_transmit(1);
+    //     //     }
+    //     // }
+    //     tinygl_update();
+    // }
+
+    while (order == -1) {
         navswitch_update ();
         int8_t data;
 
@@ -91,7 +112,10 @@ int main (void)
                     order = 1;
             }
         }
+
+        tinygl_update();
     }
+
 
 
 
