@@ -17,6 +17,8 @@ int8_t BAR_MASK = (1 << BAR_LENGTH) - 1;
 #define PACER_RATE 500
 #define MESSAGE_RATE 10
 
+#define SCORE_PACKET 0
+#define BALL_PACKET 1
 
 typedef struct
 {
@@ -42,6 +44,14 @@ void display_character (char character)
     tinygl_text (buffer);
 }
 
+int8_t generate_ball_packet(int8_t row_position, int8_t y_direction) {
+    int8_t packet = 0;
+    packet += (BALL_PACKET << 7);
+    packet += (row_position << 4);
+    packet += (row_position << 2);
+    return packet;
+}
+
 int main (void)
 {
     system_init();
@@ -62,28 +72,9 @@ int main (void)
     int8_t order = -1;
     int8_t ret;
 
+    int8_t isTurn = 0;
 
-    // // Handle who starts
-    // while (order == -1) {
-    //     navswitch_update ();
-    //     int8_t data;
-
-    //     ret = ir_serial_receive (&data);
-    //     if (ret == IR_SERIAL_OK)
-    //     {
-    //         display_character ('0' + data);
-    //     }
-
-    //     // // On button push, sends a data package 1: "I want to be first!"
-    //     // if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
-    //     //     for (int i= 0; i < 5; i++) {
-    //     //         display_character ('1');
-    //     //         ir_serial_transmit(1);
-    //     //     }
-    //     // }
-    //     tinygl_update();
-    // }
-
+    // Handle who goes first
     while (order == -1) {
         navswitch_update ();
         int8_t data;
@@ -95,24 +86,29 @@ int main (void)
                 ir_serial_transmit(1);
             }
         }
-
+        
         // Receives any messages sent by the other board
         ret = ir_serial_receive (&data);
         if (ret == IR_SERIAL_OK)
         {
-            display_character ('0' + data);
+            display_character ('1');
             switch (data) {
                 // other board has already said they want to be first.
                 case 1:
                     order = 2;
-                    ir_serial_transmit(2); // send an acknowledgement
+                    for (int i=0; i < 5; i++) {
+                        ir_serial_transmit(2); // send an acknowledgement
+                    }
+                    isTurn = 0;
+                    break;
 
                 // other board has admitted defeat, this board is first
                 case 2:
                     order = 1;
+                    isTurn = 1;
+                    break;
             }
         }
-
         tinygl_update();
     }
 
@@ -125,7 +121,7 @@ int main (void)
     {
         pacer_wait();
 
-        if (count == 10) {
+        if (isTurn == 1 && count == 10) {
             if (
                 (ball_position.y == bar_position.y - 1) && 
                 (0 <= (ball_position.x - bar_position.x)) && 
@@ -141,9 +137,12 @@ int main (void)
                 ball_position.y = 0;
             } 
             if (ball_position.y < 0 && velocity.y == -1) {
-                // should bounce if hits the back wall
-                // TODO: removed once second board added
-                velocity.y *= -1;
+                isTurn = 0;
+                for (int i=0; i < 5; i++) {
+                    int8_t packet = generate_ball_packet(ball_position.x, velocity.x+1);
+                    ir_serial_transmit(packet); // send passover data
+                }
+
             }
             if (ball_position.x == 0 || ball_position.x == 6) {
                 // should bounce if it hits the sides
@@ -155,7 +154,14 @@ int main (void)
             ball_position.y += velocity.y;
             count = 0;
         }
-        
+
+        int8_t recv = 0;
+        ret = ir_serial_receive (&recv);
+        if (ret == IR_SERIAL_OK)
+        {
+            if 
+        }
+
         // handle bar movement
         navswitch_update ();
         if (navswitch_push_event_p(NAVSWITCH_NORTH)) { 
@@ -170,7 +176,9 @@ int main (void)
             ledmat_display_column(BAR_MASK << bar_position.x, bar_position.y);
             toggle = 1;
         } else {
-            ledmat_display_column(1 << ball_position.x, ball_position.y);
+            if (isTurn == 1) {
+                ledmat_display_column(1 << ball_position.x, ball_position.y);
+            }
             toggle = 0;
         }
         count++;
