@@ -8,6 +8,8 @@
 #include "tinygl.h"
 #include "../fonts/font5x7_1.h"
 
+#include "ball.h"
+
 #define BAR_LENGTH 7
 int8_t DELTA_ROW = 1;
 int8_t DELTA_COL = 1;
@@ -20,11 +22,6 @@ int8_t BAR_MASK = (1 << BAR_LENGTH) - 1;
 #define SCORE_PACKET 0
 #define BALL_PACKET 1
 
-typedef struct
-{
-    int8_t x;
-    int8_t y;
-} Vector_t;
 
 int8_t max(int8_t op1, int8_t op2)
 {
@@ -63,8 +60,7 @@ int main (void)
     tinygl_text_speed_set (MESSAGE_RATE);
     ir_serial_init();
 
-    Vector_t velocity = {1, 1};
-    Vector_t ball_position = {LEDMAT_ROWS_NUM / 2, 1};
+    init_ball();
     Vector_t bar_position = {(LEDMAT_ROWS_NUM / 2) - (BAR_LENGTH / 2), LEDMAT_COLS_NUM - 1};
     int8_t toggle = 0;
     int8_t count = 0;
@@ -122,36 +118,25 @@ int main (void)
         pacer_wait();
 
         if (isTurn == 1 && count == 10) {
-            if (
-                (ball_position.y == bar_position.y - 1) && 
-                (0 <= (ball_position.x - bar_position.x)) && 
-                ((ball_position.x - bar_position.x) < BAR_LENGTH)) {
-                // should bounce if hits the paddle
-                velocity.y *= -1;
+            if (hits_paddle(bar_position)) {
+                paddle_bounce();
             }
-            if (ball_position.y == 4) {
-                // hit the wall, dies
-                velocity.x = 0;
-                velocity.y = 0;
-                ball_position.x = 3;
-                ball_position.y = 0;
+            if (hits_back_wall()) {
+                wall_stop();
             } 
-            if (ball_position.y < 0 && velocity.y == -1) {
+            if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
                 for (int i=0; i < 5; i++) {
-                    int8_t packet = generate_ball_packet(ball_position.x, velocity.x+1);
+                    int8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x+1);
                     ir_serial_transmit(packet); // send passover data
                 }
 
             }
-            if (ball_position.x == 0 || ball_position.x == 6) {
-                // should bounce if it hits the sides
-                velocity.x *= -1;
+            if (hits_side()) {
+                wall_bounce();
             }
 
-            // update ball position
-            ball_position.x += velocity.x;
-            ball_position.y += velocity.y;
+            update_ball_position();
             count = 0;
         }
 
@@ -177,7 +162,7 @@ int main (void)
             toggle = 1;
         } else {
             if (isTurn == 1) {
-                ledmat_display_column(1 << ball_position.x, ball_position.y);
+                display_ball();
             }
             toggle = 0;
         }
