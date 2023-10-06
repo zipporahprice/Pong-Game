@@ -8,9 +8,13 @@ void bar_init(bar_length) {
     position = (Vector_t) {(LEDMAT_ROWS_NUM / 2) - (BAR_LENGTH / 2), LEDMAT_COLS_NUM - 1};
 }
 
-Vector_t bar_set_position(int8_t x, int8_t y) {
+void bar_set_position(int8_t x, int8_t y) {
     position.x = x;
     position.y = y;
+}
+
+Vector_t bar_get_position() {
+    return position;
 }
 
 void bar_update() {

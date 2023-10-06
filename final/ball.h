@@ -5,11 +5,6 @@
 #define LAST_ROW 6
 #define BACK_ROW 4
 
-#include "stdio.h"
-#include "stdbool.h"
-#include "stdint.h"
-#include "system.h"
-#include "pio.h"
 #include "ledmat.h"
 
 typedef struct
@@ -18,7 +13,7 @@ typedef struct
     int8_t y;
 } Vector_t;
 
-void init_ball();
+void ball_init();
 
 Vector_t get_ball_position();
 

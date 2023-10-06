@@ -49,8 +49,17 @@ font.o: ../../utils/font.c ../../drivers/avr/system.h ../../utils/font.h
 display.o: ../../drivers/display.c ../../drivers/avr/system.h ../../drivers/display.h ../../drivers/ledmat.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
+bar.o: bar.c bar.h helper.h ../../drivers/navswitch.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+ball.o: ball.c ball.h ../../drivers/ledmat.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+helper.o: helper.c helper.h ../../drivers/system.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
 # Link: create ELF output file from object files.
-game.out: game.o system.o ledmat.o navswitch.o pacer.o timer.o ir.o ir_serial.o tinygl.o font.o display.o
+game.out: game.o system.o ledmat.o navswitch.o pacer.o timer.o ir.o ir_serial.o tinygl.o font.o display.o ball.o bar.o helper.o
 	$(CC) $(CFLAGS) $^ -o $@ -lm
 	$(SIZE) $@
 

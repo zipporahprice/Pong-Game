@@ -9,12 +9,7 @@
 #include "../fonts/font5x7_1.h"
 
 #include "ball.h"
-
-#define BAR_LENGTH 7
-int8_t DELTA_ROW = 1;
-int8_t DELTA_COL = 1;
-
-int8_t BAR_MASK = (1 << BAR_LENGTH) - 1;
+#include "bar.h"
 
 #define PACER_RATE 500
 #define MESSAGE_RATE 10
@@ -22,16 +17,6 @@ int8_t BAR_MASK = (1 << BAR_LENGTH) - 1;
 #define SCORE_PACKET 0
 #define BALL_PACKET 1
 
-
-int8_t max(int8_t op1, int8_t op2)
-{
-    return op1 > op2 ? op1 : op2;
-}
-
-int8_t min(int8_t op1, int8_t op2)
-{
-    return op1 > op2 ? op2 : op1;
-}
 
 void display_character (char character)
 {
@@ -59,9 +44,8 @@ int main (void)
     tinygl_font_set (&font5x7_1);
     tinygl_text_speed_set (MESSAGE_RATE);
     ir_serial_init();
-
-    init_ball();
-    Vector_t bar_position = {(LEDMAT_ROWS_NUM / 2) - (BAR_LENGTH / 2), LEDMAT_COLS_NUM - 1};
+    ball_init();
+    bar_init();
     int8_t toggle = 0;
     int8_t count = 0;
 
@@ -118,7 +102,7 @@ int main (void)
         pacer_wait();
 
         if (isTurn == 1 && count == 10) {
-            if (hits_paddle(bar_position)) {
+            if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
             }
             if (hits_back_wall()) {
@@ -140,25 +124,19 @@ int main (void)
             count = 0;
         }
 
-        int8_t recv = 0;
-        ret = ir_serial_receive (&recv);
-        if (ret == IR_SERIAL_OK)
-        {
-            if 
-        }
+        // int8_t recv = 0;
+        // ret = ir_serial_receive (&recv);
+        // if (ret == IR_SERIAL_OK)
+        // {
+        //     if 
+        // }
 
         // handle bar movement
-        navswitch_update ();
-        if (navswitch_push_event_p(NAVSWITCH_NORTH)) { 
-            bar_position.x = max(0, bar_position.x - 1);
-        }
-        else if (navswitch_push_event_p(NAVSWITCH_SOUTH)) {
-            bar_position.x = min(LEDMAT_COLS_NUM - BAR_LENGTH + 2, bar_position.x + 1);
-        }
+        bar_update();
 
         // update ledmat
         if (toggle == 0) {
-            ledmat_display_column(BAR_MASK << bar_position.x, bar_position.y);
+            bar_display();
             toggle = 1;
         } else {
             if (isTurn == 1) {

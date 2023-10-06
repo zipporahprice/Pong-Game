@@ -6,7 +6,9 @@
 
 void bar_init(bar_length);
 
-Vector_t bar_set_position(int8_t x, int8_t y);
+void bar_set_position(int8_t x, int8_t y);
+
+Vector_t bar_get_position();
 
 void bar_update();
 

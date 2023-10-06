@@ -3,7 +3,7 @@
 Vector_t velocity;
 Vector_t ball_position;
 
-void init_ball()
+void ball_init()
 {
     Vector_t velocity = {1, 1};
     Vector_t ball_position = {LEDMAT_ROWS_NUM / 2, 1};
