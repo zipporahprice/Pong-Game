@@ -55,7 +55,7 @@ bar.o: bar.c bar.h helper.h ../../drivers/navswitch.h
 ball.o: ball.c ball.h ../../drivers/ledmat.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-helper.o: helper.c helper.h ../../drivers/system.h
+helper.o: helper.c helper.h ../../drivers/avr/system.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 # Link: create ELF output file from object files.

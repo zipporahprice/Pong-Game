@@ -5,8 +5,8 @@ Vector_t ball_position;
 
 void ball_init()
 {
-    Vector_t velocity = {1, 1};
-    Vector_t ball_position = {LEDMAT_ROWS_NUM / 2, 1};
+    velocity = (Vector_t) {1, 1};
+    ball_position = (Vector_t) {LEDMAT_ROWS_NUM / 2, 1};
 }
 
 Vector_t get_ball_position() {
@@ -38,7 +38,7 @@ void wall_stop()
 {
     velocity.x = 0;
     velocity.y = 0;
-    init_ball();
+    ball_init();
 }
 
 bool hits_side()
