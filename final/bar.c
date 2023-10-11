@@ -1,10 +1,11 @@
 #include "navswitch.h"
+#include "ledmat.h"
 #include "helper.h"
 #include "bar.h"
 
 Vector_t position;
 
-void bar_init(bar_length) {
+void bar_init() {
     position = (Vector_t) {(LEDMAT_ROWS_NUM / 2) - (BAR_LENGTH / 2), LEDMAT_COLS_NUM - 1};
 }
 

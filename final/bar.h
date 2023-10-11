@@ -4,7 +4,7 @@
 #define BAR_LENGTH 7
 #define BAR_MASK ((1 << BAR_LENGTH) - 1)
 
-void bar_init(bar_length);
+void bar_init(void);
 
 void bar_set_position(int8_t x, int8_t y);
 

@@ -26,11 +26,11 @@ void display_character (char character)
     tinygl_text (buffer);
 }
 
-int8_t generate_ball_packet(int8_t row_position, int8_t y_direction) {
+int8_t generate_ball_packet(int8_t row_position, int8_t direction) {
     int8_t packet = 1;
     packet += (BALL_PACKET << 7);
     packet += (row_position << 4);
-    packet += ((y_direction+1) << 2);
+    packet += ((direction+1) << 2);
     return packet;
 }
 
@@ -74,7 +74,7 @@ int main (void)
     // Handle who goes first
     while (order == -1) {
         navswitch_update ();
-        int8_t data;
+        uint8_t data;
 
 
         // On button push, sends a data package 1: "I want to be first!"
@@ -109,11 +109,6 @@ int main (void)
         tinygl_update();
     }
 
-
-
-
-
-
     while (1)
     {
         pacer_wait();
@@ -127,8 +122,8 @@ int main (void)
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
-                int8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x);
-                for (int i=0; i < 3; i++) {
+                uint8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x);
+                for (int i=0; i < 5; i++) {
                     ir_serial_transmit(packet); // send passover data
                 }
             }
@@ -140,7 +135,7 @@ int main (void)
             count = 0;
         } else if (isTurn == 0) {
 
-            int8_t received_data = 0;
+            uint8_t received_data = 0;
             return_code = ir_serial_receive (&received_data);
             if (return_code == IR_SERIAL_OK)
             {
