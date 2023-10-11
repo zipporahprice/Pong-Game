@@ -30,11 +30,11 @@ int8_t generate_ball_packet(int8_t row_position, int8_t y_direction) {
     int8_t packet = 1;
     packet += (BALL_PACKET << 7);
     packet += (row_position << 4);
-    packet += (y_direction << 2);
+    packet += ((y_direction+1) << 2);
     return packet;
 }
 
-void parse_ball_packet(int8_t packet, int8_t* isTurn) {
+void parse_ball_packet(int8_t packet) {
     int8_t packet_type = (packet & (1 << 7)) >> 7;
     int8_t row_position = (packet >> 4) & 0b111;
     int8_t y_direction = ((packet >> 2) & 0b11) - 1; 
@@ -42,28 +42,12 @@ void parse_ball_packet(int8_t packet, int8_t* isTurn) {
     switch (packet_type)
     {
         case 0:
-            while (1) {
-                    ledmat_display_column(0b1010101, 0);
-                    ledmat_display_column(0b0101010, 1);
-                    ledmat_display_column(0b1010101, 2);
-                    ledmat_display_column(0b0101010, 3);
-                    ledmat_display_column(0b1010101, 4);
-                }
             break;
         
         case 1:
             set_ball_position(row_position, 0);
             set_ball_velocity(y_direction, 1);
-            *isTurn = 1;
             break;
-        default:
-            while (1) {
-                ledmat_display_column(packet_type >> 1, 0);
-                ledmat_display_column(packet_type >> 1, 1);
-                ledmat_display_column(packet_type >> 1, 2);
-                ledmat_display_column(packet_type >> 1, 3);
-                ledmat_display_column(0b1110000, 4);
-            }
     }
 }
 
@@ -143,8 +127,8 @@ int main (void)
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
-                int8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x+1);
-                for (int i=0; i < 5; i++) {
+                int8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x);
+                for (int i=0; i < 3; i++) {
                     ir_serial_transmit(packet); // send passover data
                 }
             }
@@ -160,7 +144,8 @@ int main (void)
             return_code = ir_serial_receive (&received_data);
             if (return_code == IR_SERIAL_OK)
             {
-                parse_ball_packet(received_data, &isTurn);
+                isTurn = 1;
+                parse_ball_packet(received_data);
             }
         }
 
