@@ -30,8 +30,26 @@ int8_t generate_ball_packet(int8_t row_position, int8_t y_direction) {
     int8_t packet = 0;
     packet += (BALL_PACKET << 7);
     packet += (row_position << 4);
-    packet += (row_position << 2);
+    packet += (y_direction << 2);
     return packet;
+}
+
+void parse_ball_packet(int8_t packet, int8_t* isTurn) {
+    int8_t packet_type = packet >> 7;
+    int8_t row_position = (packet >> 4) & 0b111;
+    int8_t y_direction = ((packet >> 2) & 0b11) - 1; 
+
+    switch (packet_type)
+    {
+    case SCORE_PACKET:
+        break;
+    
+    case BALL_PACKET:
+        set_ball_position(row_position, 0);
+        set_ball_velocity(-1, y_direction);
+        *isTurn = 1;
+        break;
+    }
 }
 
 int main (void)
@@ -50,7 +68,7 @@ int main (void)
     int8_t count = 0;
 
     int8_t order = -1;
-    int8_t ret;
+    int8_t return_code;
 
     int8_t isTurn = 0;
 
@@ -68,8 +86,8 @@ int main (void)
         }
         
         // Receives any messages sent by the other board
-        ret = ir_serial_receive (&data);
-        if (ret == IR_SERIAL_OK)
+        return_code = ir_serial_receive (&data);
+        if (return_code == IR_SERIAL_OK)
         {
             display_character ('1');
             switch (data) {
@@ -114,7 +132,6 @@ int main (void)
                     int8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x+1);
                     ir_serial_transmit(packet); // send passover data
                 }
-
             }
             if (hits_side()) {
                 wall_bounce();
@@ -124,12 +141,12 @@ int main (void)
             count = 0;
         }
 
-        // int8_t recv = 0;
-        // ret = ir_serial_receive (&recv);
-        // if (ret == IR_SERIAL_OK)
-        // {
-        //     if 
-        // }
+        int8_t received_data = 0;
+        return_code = ir_serial_receive (&received_data);
+        if (return_code == IR_SERIAL_OK)
+        {
+            parse_ball_packet(received_data, &isTurn);
+        }
 
         // handle bar movement
         bar_update();

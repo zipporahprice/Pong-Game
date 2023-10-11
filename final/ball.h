@@ -32,4 +32,8 @@ void update_ball_position(void);
 
 void display_ball(void);
 
+void set_ball_position(int8_t x, int8_t y);
+
+void set_ball_velocity(int8_t x, int8_t y);
+
 #endif

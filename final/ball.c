@@ -66,3 +66,13 @@ void display_ball()
 {
     ledmat_display_column(1 << ball_position.x, ball_position.y);
 }
+
+void set_ball_position(int8_t x, int8_t y) {
+    ball_position.x = x;
+    ball_position.y = y;
+}
+
+void set_ball_velocity(int8_t x, int8_t y) {
+    velocity.x = x;
+    velocity.y = y;
+}
