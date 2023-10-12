@@ -1,5 +1,5 @@
 #include "ball.h"
-
+#include "bar.h"
 Vector_t velocity;
 Vector_t ball_position;
 
@@ -31,7 +31,7 @@ void paddle_bounce()
 
 bool hits_back_wall()
 {
-    return ball_position.y == BACK_ROW;
+    return ball_position.y >= BACK_ROW;
 }
 
 void wall_stop()
@@ -43,7 +43,7 @@ void wall_stop()
 
 bool hits_side()
 {
-    return ball_position.x == FIRST_ROW || ball_position.x == LAST_ROW;
+    return ball_position.x <= FIRST_ROW || ball_position.x >= LAST_ROW;
 }
 
 void wall_bounce()

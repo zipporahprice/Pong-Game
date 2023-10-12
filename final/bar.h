@@ -1,7 +1,7 @@
 #ifndef BAR_H
 #define BAR_H
 
-#define BAR_LENGTH 7
+#define BAR_LENGTH 3
 #define BAR_MASK ((1 << BAR_LENGTH) - 1)
 
 void bar_init(void);

@@ -1,6 +1,5 @@
 #ifndef BALL_H
 #define BALL_H
-#define BAR_LENGTH 7
 #define FIRST_ROW 0
 #define LAST_ROW 6
 #define BACK_ROW 4
