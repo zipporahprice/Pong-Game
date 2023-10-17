@@ -4,7 +4,6 @@
 #include "navswitch.h"
 #include "pacer.h"
 #include "stdlib.h"
-#include "ir_serial.h"
 #include "tinygl.h"
 #include "../fonts/font5x7_1.h"
 #include "button.h"
