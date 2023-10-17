@@ -3,7 +3,7 @@
  * @author Zipporah Price
  * @author Jake Dalton
  * @date 17 Oct 2023
- * @brief Main functionality for pong game.
+ * @brief Main game loop for the Pong game. 
 */
 
 #include "system.h"
@@ -15,7 +15,6 @@
 #include "tinygl.h"
 #include "../fonts/font5x7_1.h"
 #include "button.h"
-
 #include "ball.h"
 #include "bar.h"
 #include "displays.h"
@@ -23,7 +22,8 @@
 
 #define SCORE 0
 #define BALL 1
-#define WON 3
+#define SCORE_TO_WIN 3
+#define STARTING_SPEED 40
 
 int8_t this_score = 0;
 int8_t other_score = 0;
@@ -32,7 +32,12 @@ int8_t count;
 int8_t speed;
 
 /**
- * Sends the current ball position to the opponent.
+ * Sends the ball to the opponent's screen using 3 separate putc calls.
+ * First call: Packet type, stored in BALL definition.
+ * Second call: The row the ball should appear on, need to flip it as the other board is rotated 180 degrees.
+ * Third call: The direction the ball should be travelling in, need to flip it as above.
+ * @param row_position a value from 0 to (LEDMAT_ROWS_NUM - 1) representing the row the ball should appear on
+ * @param direction a value from -1 to 1 representing the x-component of the ball's velocity  
 */
 void send_ball_packet(int8_t row_position, int8_t direction)
 {
@@ -42,7 +47,9 @@ void send_ball_packet(int8_t row_position, int8_t direction)
 }
 
 /**
- * Sends the current scores to the opponent.
+ * Sends a score packet to the opponent containing the player's current score and the opponent's updated score.
+ * @param row_position a value from 0 to (LEDMAT_ROWS_NUM - 1) representing the row the ball should appear on
+ * @param direction a value from -1 to 1 representing the x-component of the ball's velocity  
 */
 void send_score_packet(void)
 {
@@ -52,7 +59,8 @@ void send_score_packet(void)
 }
 
 /**
- * Keeps current display until navswitch is clicked - then exits loop.
+ * Blocks until navswitch is clicked - then exits loop.
+ * Includes tinygl_update(), so useful for scrolling text until user input.
 */
 void scroll_until_click(void)
 {
@@ -74,24 +82,27 @@ void scroll_until_click(void)
 }
 
 /**
- * Checks the current scores for a winner.
+ * Checks if either player has reached the winning number of points.
+ * Triggers win/loss screens if so, ignores call if not.
 */
 void check_score(void)
 {
-    if (this_score == WON) {
-        // winner
+    if (this_score == SCORE_TO_WIN) {
+        // This player is the winner
         won_screen();
         scroll_until_click();
-    } else if (other_score == WON) {
-        // loser
+    } else if (other_score == SCORE_TO_WIN) {
+        // The opponent was the winner
         lost_screen();
         scroll_until_click();
     }
 }
 
 /**
- * Receives data: either score update or ball position.
- * If score update:
+ * Receives a packet from the opponent.
+ * Starts by receiving which type of packet it is (always the first character).
+ * Two more getc calls follow (what they contain depends on the type of packet).
+ * For further reference see send_ball_packet() and send_score_packet().
 */
 void receive_packet(void)
 {
@@ -101,9 +112,9 @@ void receive_packet(void)
         this_score = ir_uart_getc();
         check_score();
     } else if (packet_type == BALL) {
-        set_ball_position(ir_uart_getc(), 0);
+        ball_set_position(ir_uart_getc(), 0);
         int8_t received_velocity_x = clamp(ir_uart_getc(), -1, 1);
-        set_ball_velocity(received_velocity_x, 1);
+        ball_set_velocity(received_velocity_x, 1);
         is_turn = 1;
     }
 }
@@ -146,7 +157,7 @@ void init_game(void)
     ir_uart_init();
     button_init();
     count = 0;
-    speed = 40;
+    speed = STARTING_SPEED;
     is_turn = decide_turn();
     ledmat_init();
     ball_init();
@@ -154,58 +165,63 @@ void init_game(void)
 }
 
 /**
- * Main gameplay for the pong game.
+ * Main gameplay loop for the pong game.
 */
 int main (void)
 {
     init_game();
 
     while(1) {
+
+        pacer_wait();
+
+        // Debug menu on button push, cuts execution and displays the below variables in binary.
         button_update();
         if (button_push_event_p(BUTTON1)) {
             while (1) {
-                ledmat_display_column(this_score, 0);
-                ledmat_display_column(other_score, 1);
+                ledmat_display_column(ball_get_position().x, 0);
+                ledmat_display_column(ball_get_position().y, 1);
+                ledmat_display_column(ball_get_velocity().x, 2);
+                ledmat_display_column(ball_get_velocity().y, 3);
+                ledmat_display_column((this_score << 4) + other_score, 4);
             }
         }
-        pacer_wait();
-        // if not turn, waits for ball
+
+        // If it's not the player's turn, player waits for communication from the opponent
         if (is_turn == 0) {
             if (ir_uart_read_ready_p()) {
                 receive_packet();
             }
         } else if (is_turn == 1 && count >= speed) {
-            // if ball hits the paddle
-            if (hits_paddle(bar_get_position())) {
-                paddle_bounce();
+            if (ball_hits_paddle(bar_get_position())) {
+                ball_bounce_y();
                 speed -= 3;
             }
-            // if ball hits the back wall, opponent gains a point - send updated scores
-            if (hits_back_wall()) {
+            // If ball hits the back wall, opponent gains a point - send updated scores
+            if (ball_hits_back_wall()) {
                 other_score++;
                 send_score_packet();
                 check_score();
                 
-                set_ball_position(-1, -1);
+                ball_set_position(-1, -1);
                 ball_stop();
-                speed = 40;
+                speed = STARTING_SPEED;
                 send_ball_packet(LEDMAT_ROWS_NUM / 2, 1);
                 is_turn = 0;
             }
-            // if ball crosses border, send ball to opponent
-            if (crosses_boundary()) {
+            // If ball crosses the border furthest from the player, send ball to opponent's screen
+            if (ball_crosses_boundary()) {
                 is_turn = 0;
-                send_ball_packet(get_ball_position().x, get_velocity().x);
+                send_ball_packet(ball_get_position().x, ball_get_velocity().x);
                 ball_stop();
             }
-            if (hits_side()) {
-                wall_bounce();
+            if (ball_hits_side()) {
+                ball_bounce_x();
             }
-            update_ball_position();
+            ball_update_position();
             count = 0;
         }
 
-        // handle bar movement
         bar_update();
         toggle_display(is_turn);
         count++;
