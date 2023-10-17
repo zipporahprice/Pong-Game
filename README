@@ -1,3 +1,15 @@
+# SafeTrip - SENG 202 Project Team 10
+SafeTrip, designed by second-year software engineering students from the University of Canterbury, is a unique, New Zealand-based safety routing app, providing visual displays of crash data and enabling users to plan routes based on comprehensive safety ratings using public data from Waka Kotahi. Targeting New Zealand road users with a keen focus on safety, SafeTrip distinguishes itself by combining features of potential competitors, offering unique functionality to prioritize your safety on the roads. Below are details on how to set up and run the application.
+
+## Authors
+- Angelica Silva
+- Christopher Wareing
+- Neil Alombro
+- Todd Vermeir
+- William Thompson
+- Zipporah Price
+
+
 <h1> Developed by Zipporah Price and Jake Dalton. </h1>
 
 This project is an implementation of a 'Pong' game, playable only by using two UCFK4 microcontrollers.
