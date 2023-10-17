@@ -54,11 +54,11 @@ void display_character (char character)
 
 void send_ball_packet(int8_t row_position, int8_t direction) {
     ir_uart_putc(BALL_PACKET);
-    ir_uart_putc(row_position);
-    ir_uart_putc(direction);
+    ir_uart_putc(LEDMAT_ROWS_NUM - (row_position + 1));
+    ir_uart_putc(-1 * direction);
 }
 
-void receive_packet() {
+void receive_packet(void) {
     int8_t packet_type = ir_uart_getc();
     switch (packet_type) {
         case (BALL_PACKET):
@@ -145,7 +145,12 @@ int main (void)
                 ledmat_display_column(bar_get_position().y, 3);
             }
         }
-        if (isTurn == 1 && count == 40) {
+        if (isTurn == 0) {
+            if (ir_uart_read_ready_p()) {
+                receive_packet();
+                isTurn = 1;
+            }
+        } else if (isTurn == 1 && count == 40) {
             if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
             }
@@ -159,14 +164,8 @@ int main (void)
             if (hits_side()) {
                 wall_bounce();
             }
-
             update_ball_position();
             count = 0;
-        } else if (isTurn == 0) {
-            if (ir_uart_read_ready_p()) {
-                receive_packet();
-                isTurn = 1;
-            }
         }
 
         // handle bar movement
