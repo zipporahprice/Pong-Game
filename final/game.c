@@ -27,31 +27,6 @@ void display_character (char character)
     tinygl_text (buffer);
 }
 
-// int8_t generate_ball_packet(int8_t row_position, int8_t direction) {
-//     int8_t packet = 1;
-//     packet += (BALL_PACKET << 7);
-//     packet += (row_position << 4);
-//     packet += (((direction*-1)+1) << 2);
-//     return packet;
-// }
-
-// void parse_ball_packet(int8_t packet) {
-//     int8_t packet_type = (packet & (1 << 7)) >> 7;
-//     int8_t row_position = (packet >> 4) & 0b111;
-//     int8_t y_direction = ((packet >> 2) & 0b11) - 1; 
-
-//     switch (packet_type)
-//     {
-//         case SCORE_PACKET:
-//             break;
-        
-//         case BALL_PACKET:
-//             set_ball_position(row_position, 0);
-//             set_ball_velocity(y_direction, 1);
-//             break;
-//     }
-// }
-
 void send_ball_packet(int8_t row_position, int8_t direction) {
     ir_uart_putc(BALL_PACKET);
     ir_uart_putc(LEDMAT_ROWS_NUM - (row_position + 1));
@@ -68,42 +43,18 @@ void receive_packet(void) {
     }
 }
 
-/**
- * Blocks until packet acknowledgement received 
-*/
-void send(int8_t packet) {
-    int8_t packet_received = 0;
-    while (packet_received == 0) {
-        if (ir_uart_write_ready_p()) {
-            ir_uart_putc(packet);
+void toggle_display(int8_t isTurn) {
+        static int8_t toggle = 0;
+        if (toggle == 0) {
+            bar_display();
+        } else if (isTurn == 1) {
+            display_ball();
         }
-        if (ir_uart_read_ready_p()) {
-            packet_received = ir_uart_getc();
-        }
-    }
+        toggle = ~toggle;
 }
 
-int main (void)
-{
-    system_init();
-    ledmat_init();
-    pacer_init (100);
-    navswitch_init();
-    tinygl_init (PACER_RATE);
-    tinygl_font_set (&font5x7_1);
-    tinygl_text_speed_set (MESSAGE_RATE);
-    ir_uart_init();
-    button_init();
-    ball_init();
-    bar_init();
-    int8_t toggle = 0;
-    int8_t count = 0;
-
+int8_t turn_handshake(void) {
     int8_t order = -1;
-    int8_t return_code;
-
-    int8_t isTurn = 0;
-
     // Handle who goes first
     while (order == -1) {
         navswitch_update ();
@@ -119,40 +70,51 @@ int main (void)
             switch (data) {
                 // other board has already said they want to be first.
                 case 1:
-                    order = 2;
+                    order = 0;
                     ir_uart_putc(2); // send an acknowledgement
-                    isTurn = 0;
                     break;
 
                 // other board has admitted defeat, this board is first
                 case 2:
                     order = 1;
-                    isTurn = 1;
                     break;
             }
         }
         tinygl_update();
     }
+    return order;
+}
+
+int main (void)
+{
+    system_init();
+    ledmat_init();
+    pacer_init (100);
+    navswitch_init();
+    tinygl_init (PACER_RATE);
+    tinygl_font_set (&font5x7_1);
+    tinygl_text_speed_set (MESSAGE_RATE);
+    ir_uart_init();
+    button_init();
+    ball_init();
+    bar_init();
+    int8_t count = 0;
+    int8_t speed = 40;
+
+    int8_t isTurn = turn_handshake();
 
     while(1)
     {
         pacer_wait();
-        if (button_push_event_p(BUTTON1)) {
-            while (1) {
-                ledmat_display_column(get_ball_position().x, 0);
-                ledmat_display_column(get_ball_position().y, 1);
-                ledmat_display_column(bar_get_position().x, 2);
-                ledmat_display_column(bar_get_position().y, 3);
-            }
-        }
         if (isTurn == 0) {
             if (ir_uart_read_ready_p()) {
                 receive_packet();
                 isTurn = 1;
             }
-        } else if (isTurn == 1 && count == 40) {
+        } else if (isTurn == 1 && count == speed) {
             if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
+                speed -= 5;
             }
             if (hits_back_wall()) {
                 wall_stop();
@@ -171,16 +133,7 @@ int main (void)
         // handle bar movement
         bar_update();
 
-        // update ledmat
-        if (toggle == 0) {
-            bar_display();
-            toggle = 1;
-        } else {
-            if (isTurn == 1) {
-                display_ball();
-            }
-            toggle = 0;
-        }
+        toggle_display(isTurn);
         count++;
     }
 }
