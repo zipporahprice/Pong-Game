@@ -83,7 +83,7 @@ int8_t turn_handshake(void) {
 
 void check_score(void) {
     if (this_score == WON) {
-        // winner
+        // winnerad
         won_screen();
         scroll_until_click();
     } else if (other_score == WON) {
@@ -100,7 +100,7 @@ void scroll_until_click(void) {
 
         if (ir_uart_read_ready_p()) {
             if (ir_uart_getc() == 'X') {
-                clicked = 0;
+                clicked = 1;
             }
         }
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
@@ -139,10 +139,8 @@ int main (void)
         button_update();
         if (button_push_event_p(BUTTON1)) {
             while (1) {
-                ledmat_display_column(get_ball_position().x, 0);
-                ledmat_display_column(get_ball_position().y, 1);
-                ledmat_display_column(get_velocity().x, 2);
-                ledmat_display_column(get_velocity().y, 3);
+                ledmat_display_column(this_score, 0);
+                ledmat_display_column(other_score, 1);
             }
         }
         pacer_wait();
