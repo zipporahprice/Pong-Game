@@ -82,7 +82,7 @@ int8_t turn_handshake(void) {
 }
 
 void check_score(void) {
-    int8_t clicked = 0; 
+    int8_t clicked = 0;
     if (this_score == WON) {
         // winner
         won_screen();
@@ -90,12 +90,13 @@ void check_score(void) {
         // loser
         lost_screen();
     }
+
     while (!clicked) {
         navswitch_update ();
 
         if (ir_uart_read_ready_p()) {
             if (ir_uart_getc() == 'X') {
-                clicked = 1;
+                clicked = 0;
             }
         }
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
