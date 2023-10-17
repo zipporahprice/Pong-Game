@@ -58,35 +58,29 @@ void toggle_display(int8_t isTurn)
 // welcome screen
 void welcome_screen(void)
 {
-    //bool clicked = 0;
     tinygl_text("Welcome! Click to start.");
-
-    // while(!clicked)
-    // {
-    //     pacer_wait();
-    //     tinygl_update();
-
-    //     navswitch_update();
-    //     if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
-    //         clicked = 1;
-    //     }
-    // }
-}
-
-// game intro??
-void intro_screen(void)
-{
-    tinygl_text("First to three points wins!");
 }
 
 // winner screen
 void won_screen(void)
 {
     tinygl_text("WINNER");
+
+    while(1)
+    {
+        pacer_wait();
+        tinygl_update();
+    }
 }
 
 // loser screen
 void lost_screen(void)
 {
     tinygl_text("LOSER");
+
+    while(1)
+    {
+        pacer_wait();
+        tinygl_update();
+    }
 }

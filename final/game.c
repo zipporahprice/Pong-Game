@@ -53,6 +53,7 @@ void receive_packet(void) {
         case (SCORE_PACKET):
             other_score = ir_uart_getc();
             this_score = ir_uart_getc();
+            check_score();
             break;
     }
 }
@@ -61,43 +62,18 @@ void receive_packet(void) {
 int8_t turn_handshake(void) {
     int8_t order = -1;
     welcome_screen();
+
     // Handle who goes first
     while (order == -1) {
-        pacer_wait();
         navswitch_update ();
 
-        // uint8_t data;
-        // // On button push, sends a data package 1: "I want to be first!"
-        // if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
-        //     ir_uart_putc(1);
-        // }
-        
-        // // Receives any messages sent by the other board
-        // if (ir_uart_read_ready_p()) {
-        //     data = ir_uart_getc();
-        //     switch (data) {
-        //         // other board has already said they want to be first.
-        //         case 1:
-        //             order = 0;
-        //             ir_uart_putc(2); // send an acknowledgement
-        //             break;
-
-        //         // other board has admitted defeat, this board is first
-        //         case 2:
-        //             order = 1;
-        //             break;
-        //     }
-        // }
-        
-
-
         if (ir_uart_read_ready_p()) {
-            if (ir_uart_getc() == 'p') {
+            if (ir_uart_getc() == 'X') {
                 order = 0;
             }
         }
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
-            ir_uart_putc('p');
+            ir_uart_putc('X');
             order = 1;
         }
         tinygl_update();
@@ -112,27 +88,25 @@ void check_score(void) {
     } else if (other_score == WON) {
         // loser
         lost_screen();
-    } else {
-        // continue playing
     }
 }
 
 void init_game(void) {
     system_init();
-    ledmat_init();
+    
     pacer_init (PACER_RATE);
     navswitch_init();
     init_display();
     ir_uart_init();
     button_init();
-    ball_init();
-    bar_init();
-
+    
     count = 0;
-    speed = 250;
+    speed = 40;
 
     isTurn = turn_handshake();
-    // isTurn = 1;
+    ledmat_init();
+    ball_init();
+    bar_init();
 }
 
 
@@ -140,12 +114,8 @@ int main (void)
 {
     init_game();
 
-    // do welcome screen
-    //welcome_screen();
-
     while(1)
     {
-
         button_update();
         if (button_push_event_p(BUTTON1)) {
             while (1) {
@@ -156,24 +126,30 @@ int main (void)
             }
         }
         pacer_wait();
+        // if not turn, waits for ball
         if (isTurn == 0) {
             if (ir_uart_read_ready_p()) {
                 receive_packet();
                 isTurn = 1;
             }
-        } else if (isTurn == 1 && count >= speed) {
+        } // is their turn:
+        else if (isTurn == 1 && count >= speed) {
+            // if ball hits the paddle
             if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
                 speed -= 3;
             }
-            // if it hits the back wall, send updated scores
+            // if ball hits the back wall, opponent gains a point - send updated scores
             if (hits_back_wall()) {
                 send_score_packet();
+                check_score();
+                
                 ball_init();
                 ball_stop();
-                speed = 250;
-            } 
-            if (get_ball_position().y < 0 && get_velocity().y == -1) {
+                speed = 40;
+            }
+            // if ball crosses border, send ball to opponent
+            if (crosses_boundary()) {
                 isTurn = 0;
                 send_ball_packet(get_ball_position().x, get_velocity().x);
                 ball_stop();
