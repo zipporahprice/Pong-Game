@@ -175,11 +175,9 @@ int main (void)
             }
         } else if (is_turn == 1 && count >= speed) {
             // if ball hits the paddle
-            int8_t hit_code = hits_paddle(bar_get_position());
-            if (hit_code != NOT_HIT) {
+            if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
                 speed -= 3;
-                set_ball_velocity(hit_code, get_velocity().y);
             }
             // if ball hits the back wall, opponent gains a point - send updated scores
             if (hits_back_wall()) {
