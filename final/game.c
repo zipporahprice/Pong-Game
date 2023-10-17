@@ -102,7 +102,8 @@ void receive_packet(void)
         check_score();
     } else if (packet_type == BALL) {
         set_ball_position(ir_uart_getc(), 0);
-        set_ball_velocity(ir_uart_getc(), 1);
+        int8_t received_velocity_x = clamp(ir_uart_getc(), -1, 1);
+        set_ball_velocity(received_velocity_x, 1);
         is_turn = 1;
     }
 }
@@ -146,7 +147,7 @@ void init_game(void)
     button_init();
     count = 0;
     speed = 40;
-    is_turn = turn_handshake();
+    is_turn = decide_turn();
     ledmat_init();
     ball_init();
     bar_init();

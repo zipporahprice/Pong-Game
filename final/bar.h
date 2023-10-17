@@ -1,6 +1,8 @@
 #ifndef BAR_H
 #define BAR_H
 
+#include "helper.h"
+
 #define BAR_LENGTH 3
 #define BAR_MASK ((1 << BAR_LENGTH) - 1)
 

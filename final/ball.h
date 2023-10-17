@@ -19,7 +19,7 @@ void paddle_bounce(void);
 
 bool hits_back_wall(void);
 
-void wall_stop(void);
+void ball_stop(void);
 
 bool hits_side(void);
 

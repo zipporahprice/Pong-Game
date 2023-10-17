@@ -5,7 +5,8 @@
 #include "navswitch.h"
 
 #include "displays.h"
-
+#include "bar.h"
+#include "ball.h"
 
 void init_display(void)
 {
