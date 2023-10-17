@@ -1,7 +1,7 @@
 # File:   Makefile
-# Author: M. P. Hayes, UCECE
-# Date:   12 Sep 2010
-# Descr:  Makefile for game
+# Authors: Zipporah Price, Jake Dalton
+# Date:   17 Oct 2023
+# Descr:  Makefile for Pong game
 
 # Definitions.
 CC = avr-gcc
@@ -87,5 +87,3 @@ clean:
 program: game.out
 	$(OBJCOPY) -O ihex game.out game.hex
 	dfu-programmer atmega32u2 erase; dfu-programmer atmega32u2 flash game.hex; dfu-programmer atmega32u2 start
-
-

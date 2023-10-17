@@ -15,35 +15,6 @@ void init_display(void)
     tinygl_text_mode_set(TINYGL_TEXT_MODE_SCROLL);
 }
 
-// void display_message(const char* message)
-// {
-//     tinygl_text(message);
-//     bool game_start = 0;
-
-//     while (!game_start) {
-//         navswitch_update();
-//         if (ir_uart_read_ready_p ()) {
-//             if (ir_uart_getc () == 'p') {
-//                 is_player1 = 0;
-//                 game_start = 1;
-//             }
-//         }
-//         if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
-//             ir_uart_putc('p');
-//             game_start = 1;
-//         }
-//         tinygl_update ();
-//     }
-// }
-
-void display_character (char character)
-{
-    char buffer[2];
-    buffer[0] = character;
-    buffer[1] = '\0';
-    tinygl_text (buffer);
-}
-
 void toggle_display(int8_t isTurn)
 {
         static int8_t toggle = 0;
@@ -55,22 +26,17 @@ void toggle_display(int8_t isTurn)
         toggle = ~toggle;
 }
 
-// welcome screen
 void welcome_screen(void)
 {
-    tinygl_text("Welcome! Click to start.");
+    tinygl_text("Welcome to Pong!");
 }
 
-// winner screen
 void won_screen(void)
 {
     tinygl_text("WINNER");
-
 }
 
-// loser screen
 void lost_screen(void)
 {
     tinygl_text("LOSER");
-
 }

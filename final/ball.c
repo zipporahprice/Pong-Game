@@ -1,3 +1,11 @@
+/**
+ * @file ball.c
+ * @author Zipporah Price
+ * @author Jake Dalton
+ * @date 17 Oct 2023
+ * @brief Functionality for ball handling.
+*/
+
 #include "ball.h"
 #include "bar.h"
 Vector_t velocity;
@@ -9,11 +17,13 @@ void ball_init()
     ball_position = (Vector_t) {LEDMAT_ROWS_NUM / 2, 1};
 }
 
-Vector_t get_ball_position() {
+Vector_t get_ball_position()
+{
     return ball_position;
 }
 
-Vector_t get_velocity() {
+Vector_t get_velocity()
+{
     return velocity;
 }
 
