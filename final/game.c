@@ -90,10 +90,12 @@ void check_if_winner(void)
         // This player is the winner
         won_screen();
         scroll_until_click();
+        refresh_game();
     } else if (opponent_score == SCORE_TO_WIN) {
         // The opponent was the winner
         lost_screen();
         scroll_until_click();
+        refresh_game();
     }
 }
 
@@ -143,7 +145,7 @@ int8_t decide_turn(void)
 }
 
 /**
- * Initialises the game conditions.
+ * Initialises the libraries and resets the game state.
 */
 void init_game(void)
 {
@@ -153,12 +155,23 @@ void init_game(void)
     init_display();
     ir_uart_init();
     button_init();
+    refresh_game();
+}
+
+/**
+ * Resets the game state back to the start.
+*/
+void refresh_game(void)
+{
     tick_count = 0;
     speed = STARTING_SPEED;
+    player_score = 0;
+    opponent_score = 0;
     is_turn = decide_turn();
     ledmat_init();
     ball_init();
     bar_init();
+    send_score_packet();
 }
 
 /**

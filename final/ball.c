@@ -122,7 +122,8 @@ void ball_display()
  * @param x x-component of the position to set.
  * @param y y-component of the position to set.
 */
-void ball_set_position(int8_t x, int8_t y) {
+void ball_set_position(int8_t x, int8_t y)
+{
     ball_position.x = x;
     ball_position.y = y;
 }
@@ -133,7 +134,8 @@ void ball_set_position(int8_t x, int8_t y) {
  * @param x x-component of the position to set.
  * @param y y-component of the position to set.
 */
-void ball_set_velocity(int8_t x, int8_t y) {
+void ball_set_velocity(int8_t x, int8_t y)
+{
     velocity.x = x;
     velocity.y = y;
 }

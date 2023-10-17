@@ -39,6 +39,7 @@ int8_t min(int8_t op1, int8_t op2)
  * @param maximum The upper bound.
  * @return The value given, clamped between the minimum and maximum.
 */
-int8_t clamp(int8_t data, int8_t minimum, int8_t maximum) {
+int8_t clamp(int8_t data, int8_t minimum, int8_t maximum)
+{
     return min(max(data, minimum), maximum);
 }
