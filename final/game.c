@@ -82,12 +82,27 @@ int8_t turn_handshake(void) {
 }
 
 void check_score(void) {
+    int8_t clicked = 0; 
     if (this_score == WON) {
         // winner
         won_screen();
     } else if (other_score == WON) {
         // loser
         lost_screen();
+    }
+    while (!clicked) {
+        navswitch_update ();
+
+        if (ir_uart_read_ready_p()) {
+            if (ir_uart_getc() == 'X') {
+                clicked = 1;
+            }
+        }
+        if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
+            ir_uart_putc('X');
+            clicked = 1;
+        }
+        tinygl_update();
     }
 }
 
@@ -141,11 +156,12 @@ int main (void)
             }
             // if ball hits the back wall, opponent gains a point - send updated scores
             if (hits_back_wall()) {
+                other_score++;
                 send_score_packet();
                 check_score();
                 
                 ball_init();
-                ball_stop();
+                // ball_stop();
                 speed = 40;
             }
             // if ball crosses border, send ball to opponent
