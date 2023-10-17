@@ -17,6 +17,10 @@
 
 #define SCORE_PACKET 0
 #define BALL_PACKET 1
+#define WON 3
+
+int8_t this_score = 0;
+int8_t other_score = 0;
 
 
 void display_character (char character)
@@ -33,12 +37,29 @@ void send_ball_packet(int8_t row_position, int8_t direction) {
     ir_uart_putc(-1 * direction);
 }
 
+/**
+ * Sends the current scores to the other player
+*/
+void send_score_packet() {
+    ir_uart_putc(SCORE_PACKET);
+    ir_uart_putc(this_score);
+    ir_uart_putc(other_score);
+}
+
+/**
+ * Receives data: either ball position or score update
+*/
 void receive_packet(void) {
     int8_t packet_type = ir_uart_getc();
     switch (packet_type) {
         case (BALL_PACKET):
             set_ball_position(ir_uart_getc(), 0);
             set_ball_velocity(ir_uart_getc(), 1);
+            break;
+        
+        case (SCORE_PACKET):
+            other_score = ir_uart_getc();
+            this_score = ir_uart_getc();
             break;
     }
 }
@@ -53,8 +74,9 @@ void toggle_display(int8_t isTurn) {
         toggle = ~toggle;
 }
 
+
 int8_t turn_handshake(void) {
-    int8_t order = -1;
+        int8_t order = -1;
     // Handle who goes first
     while (order == -1) {
         navswitch_update ();
@@ -83,6 +105,17 @@ int8_t turn_handshake(void) {
         tinygl_update();
     }
     return order;
+}
+
+void check_score()
+{
+    if (this_score == WON) {
+        // do won screen
+    } else if (other_score == WON) {
+        // do lost screen
+    } else {
+        // continue playing
+    }
 }
 
 int main (void)
@@ -116,7 +149,9 @@ int main (void)
                 paddle_bounce();
                 speed -= 5;
             }
+            // if it hits the back wall, send updated scores
             if (hits_back_wall()) {
+                send_score_packet();
                 wall_stop();
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
