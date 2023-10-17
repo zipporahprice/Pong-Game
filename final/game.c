@@ -10,6 +10,7 @@
 
 #include "ball.h"
 #include "bar.h"
+#include "displays.h"
 #include "ir_uart.h"
 
 #define PACER_RATE 500
@@ -21,15 +22,10 @@
 
 int8_t this_score = 0;
 int8_t other_score = 0;
+int8_t isTurn;
+int8_t count;
+int8_t speed;
 
-
-void display_character (char character)
-{
-    char buffer[2];
-    buffer[0] = character;
-    buffer[1] = '\0';
-    tinygl_text (buffer);
-}
 
 void send_ball_packet(int8_t row_position, int8_t direction) {
     ir_uart_putc(BALL_PACKET);
@@ -40,7 +36,7 @@ void send_ball_packet(int8_t row_position, int8_t direction) {
 /**
  * Sends the current scores to the other player
 */
-void send_score_packet() {
+void send_score_packet(void) {
     ir_uart_putc(SCORE_PACKET);
     ir_uart_putc(this_score);
     ir_uart_putc(other_score);
@@ -62,16 +58,6 @@ void receive_packet(void) {
             this_score = ir_uart_getc();
             break;
     }
-}
-
-void toggle_display(int8_t isTurn) {
-        static int8_t toggle = 0;
-        if (toggle == 0) {
-            bar_display();
-        } else if (isTurn == 1) {
-            display_ball();
-        }
-        toggle = ~toggle;
 }
 
 
@@ -107,19 +93,20 @@ int8_t turn_handshake(void) {
     return order;
 }
 
-void check_score()
-{
+void check_score(void)
+{   
     if (this_score == WON) {
-        // do won screen
+        // winner
+        won_screen();
     } else if (other_score == WON) {
-        // do lost screen
+        // loser
+        lost_screen();
     } else {
         // continue playing
     }
 }
 
-int main (void)
-{
+void init_game(void) {
     system_init();
     ledmat_init();
     pacer_init (100);
@@ -131,10 +118,20 @@ int main (void)
     button_init();
     ball_init();
     bar_init();
-    int8_t count = 0;
-    int8_t speed = 40;
 
-    int8_t isTurn = turn_handshake();
+    count = 0;
+    speed = 40;
+
+    isTurn = turn_handshake();
+}
+
+
+int main (void)
+{
+    init_game();
+
+    // do welcome screen
+    welcome_screen();
 
     while(1)
     {
@@ -144,15 +141,16 @@ int main (void)
                 receive_packet();
                 isTurn = 1;
             }
-        } else if (isTurn == 1 && count == speed) {
+        } else if (isTurn == 1 && count >= speed) {
             if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
-                speed -= 5;
+                speed -= 3;
             }
             // if it hits the back wall, send updated scores
             if (hits_back_wall()) {
                 send_score_packet();
                 wall_stop();
+                speed = 40;
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
