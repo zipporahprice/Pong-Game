@@ -15,3 +15,4 @@ This project is an implementation of a 'Pong' game, playable only by using two U
 - Each player moves their paddle side to side with the NAVSWITCH to hit the ball back.
 - If a player misses the ball, their opponent wins a point.
 - The first player to win three points is the winner.
+- After a player wins, if either player pushes the NAVSWITCH down again the game will restart fresh.
