@@ -44,17 +44,14 @@ void send_score_packet(void) {
 */
 void receive_packet(void) {
     int8_t packet_type = ir_uart_getc();
-    switch (packet_type) {
-        case (BALL_PACKET):
-            set_ball_position(ir_uart_getc(), 0);
-            set_ball_velocity(ir_uart_getc(), 1);
-            break;
-        
-        case (SCORE_PACKET):
-            other_score = ir_uart_getc();
-            this_score = ir_uart_getc();
-            check_score();
-            break;
+    if (packet_type == SCORE_PACKET) {    
+        other_score = ir_uart_getc();
+        this_score = ir_uart_getc();
+        check_score();
+    } else if (packet_type == BALL_PACKET) {
+        set_ball_position(ir_uart_getc(), 0);
+        set_ball_velocity(ir_uart_getc(), 1);
+        isTurn = 1;
     }
 }
 
@@ -83,7 +80,7 @@ int8_t turn_handshake(void) {
 
 void check_score(void) {
     if (this_score == WON) {
-        // winnerad
+        // winner
         won_screen();
         scroll_until_click();
     } else if (other_score == WON) {
@@ -148,7 +145,6 @@ int main (void)
         if (isTurn == 0) {
             if (ir_uart_read_ready_p()) {
                 receive_packet();
-                isTurn = 1;
             }
         } // is their turn:
         else if (isTurn == 1 && count >= speed) {
@@ -163,9 +159,11 @@ int main (void)
                 send_score_packet();
                 check_score();
                 
-                ball_init();
-                // ball_stop();
+                set_ball_position(-1, -1);
+                ball_stop();
                 speed = 40;
+                send_ball_packet(LEDMAT_ROWS_NUM / 2, 1);
+                isTurn = 0;
             }
             // if ball crosses border, send ball to opponent
             if (crosses_boundary()) {
