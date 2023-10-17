@@ -20,20 +20,20 @@
 #include "displays.h"
 #include "ir_uart.h"
 
-#define SCORE 0
-#define BALL 1
+#define SCORE_PACKET 0
+#define BALL_PACKET 1
 #define SCORE_TO_WIN 3
 #define STARTING_SPEED 40
 
-int8_t this_score = 0;
-int8_t other_score = 0;
-int8_t is_turn;
-int8_t count;
+int8_t player_score = 0;
+int8_t opponent_score = 0;
+bool is_turn;
+int8_t tick_count;
 int8_t speed;
 
 /**
  * Sends the ball to the opponent's screen using 3 separate putc calls.
- * First call: Packet type, stored in BALL definition.
+ * First call: Packet type, stored in BALL_PACKET definition.
  * Second call: The row the ball should appear on, need to flip it as the other board is rotated 180 degrees.
  * Third call: The direction the ball should be travelling in, need to flip it as above.
  * @param row_position a value from 0 to (LEDMAT_ROWS_NUM - 1) representing the row the ball should appear on
@@ -41,7 +41,7 @@ int8_t speed;
 */
 void send_ball_packet(int8_t row_position, int8_t direction)
 {
-    ir_uart_putc(BALL);
+    ir_uart_putc(BALL_PACKET);
     ir_uart_putc(LEDMAT_ROWS_NUM - (row_position + 1));
     ir_uart_putc(-1 * direction);
 }
@@ -53,9 +53,9 @@ void send_ball_packet(int8_t row_position, int8_t direction)
 */
 void send_score_packet(void)
 {
-    ir_uart_putc(SCORE);
-    ir_uart_putc(this_score);
-    ir_uart_putc(other_score);
+    ir_uart_putc(SCORE_PACKET);
+    ir_uart_putc(player_score);
+    ir_uart_putc(opponent_score);
 }
 
 /**
@@ -64,18 +64,17 @@ void send_score_packet(void)
 */
 void scroll_until_click(void)
 {
-    int8_t clicked = 0;
-    while (!clicked) {
+    bool is_clicked = 0;
+    while (!is_clicked) {
         navswitch_update ();
-
         if (ir_uart_read_ready_p()) {
             if (ir_uart_getc() == 'X') {
-                clicked = 1;
+                is_clicked = TRUE;
             }
         }
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
             ir_uart_putc('X');
-            clicked = 1;
+            is_clicked = TRUE;
         }
         tinygl_update();
     }
@@ -85,13 +84,13 @@ void scroll_until_click(void)
  * Checks if either player has reached the winning number of points.
  * Triggers win/loss screens if so, ignores call if not.
 */
-void check_score(void)
+void check_if_winner(void)
 {
-    if (this_score == SCORE_TO_WIN) {
+    if (player_score == SCORE_TO_WIN) {
         // This player is the winner
         won_screen();
         scroll_until_click();
-    } else if (other_score == SCORE_TO_WIN) {
+    } else if (opponent_score == SCORE_TO_WIN) {
         // The opponent was the winner
         lost_screen();
         scroll_until_click();
@@ -107,15 +106,15 @@ void check_score(void)
 void receive_packet(void)
 {
     int8_t packet_type = ir_uart_getc();
-    if (packet_type == SCORE) {    
-        other_score = ir_uart_getc();
-        this_score = ir_uart_getc();
-        check_score();
-    } else if (packet_type == BALL) {
+    if (packet_type == SCORE_PACKET) {    
+        opponent_score = ir_uart_getc();
+        player_score = ir_uart_getc();
+        check_if_winner();
+    } else if (packet_type == BALL_PACKET) {
         ball_set_position(ir_uart_getc(), 0);
         int8_t received_velocity_x = clamp(ir_uart_getc(), -1, 1);
         ball_set_velocity(received_velocity_x, 1);
-        is_turn = 1;
+        is_turn = TRUE;
     }
 }
 
@@ -124,25 +123,23 @@ void receive_packet(void)
 */
 int8_t decide_turn(void)
 {
-    int8_t order = -1;
+    int8_t turn_order = -1;
     welcome_screen();
-
     // Handle who goes first
-    while (order == -1) {
+    while (turn_order == -1) {
         navswitch_update ();
-
         if (ir_uart_read_ready_p()) {
             if (ir_uart_getc() == 'X') {
-                order = 0;
+                turn_order = 0;
             }
         }
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
             ir_uart_putc('X');
-            order = 1;
+            turn_order = 1;
         }
         tinygl_update();
     }
-    return order;
+    return turn_order;
 }
 
 /**
@@ -156,7 +153,7 @@ void init_game(void)
     init_display();
     ir_uart_init();
     button_init();
-    count = 0;
+    tick_count = 0;
     speed = STARTING_SPEED;
     is_turn = decide_turn();
     ledmat_init();
@@ -170,11 +167,8 @@ void init_game(void)
 int main (void)
 {
     init_game();
-
     while(1) {
-
         pacer_wait();
-
         // Debug menu on button push, cuts execution and displays the below variables in binary.
         button_update();
         if (button_push_event_p(BUTTON1)) {
@@ -183,31 +177,30 @@ int main (void)
                 ledmat_display_column(ball_get_position().y, 1);
                 ledmat_display_column(ball_get_velocity().x, 2);
                 ledmat_display_column(ball_get_velocity().y, 3);
-                ledmat_display_column((this_score << 4) + other_score, 4);
+                ledmat_display_column((player_score << 4) + opponent_score, 4);
             }
         }
-
         // If it's not the player's turn, player waits for communication from the opponent
-        if (is_turn == 0) {
+        if (is_turn == FALSE) {
             if (ir_uart_read_ready_p()) {
                 receive_packet();
             }
-        } else if (is_turn == 1 && count >= speed) {
+        } else if (is_turn == TRUE && tick_count >= speed) {
             if (ball_hits_paddle(bar_get_position())) {
                 ball_bounce_y();
                 speed -= 3;
             }
             // If ball hits the back wall, opponent gains a point - send updated scores
             if (ball_hits_back_wall()) {
-                other_score++;
+                opponent_score++;
                 send_score_packet();
-                check_score();
+                check_if_winner();
                 
                 ball_set_position(-1, -1);
                 ball_stop();
                 speed = STARTING_SPEED;
                 send_ball_packet(LEDMAT_ROWS_NUM / 2, 1);
-                is_turn = 0;
+                is_turn = FALSE;
             }
             // If ball crosses the border furthest from the player, send ball to opponent's screen
             if (ball_crosses_boundary()) {
@@ -219,11 +212,10 @@ int main (void)
                 ball_bounce_x();
             }
             ball_update_position();
-            count = 0;
+            tick_count = 0;
         }
-
         bar_update();
         toggle_display(is_turn);
-        count++;
+        tick_count++;
     }
 }

@@ -11,6 +11,9 @@
 
 #include "system.h"
 
+#define TRUE 1
+#define FALSE 0
+
 typedef struct
 {
     int8_t x;

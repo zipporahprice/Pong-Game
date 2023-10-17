@@ -35,7 +35,7 @@ void toggle_display(int8_t isTurn)
         static int8_t toggle = 0;
         if (toggle == 0) {
             bar_display();
-        } else if (isTurn == 1) {
+        } else if (isTurn == TRUE) {
             ball_display();
         }
         toggle = ~toggle;
