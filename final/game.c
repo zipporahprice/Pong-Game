@@ -82,15 +82,19 @@ int8_t turn_handshake(void) {
 }
 
 void check_score(void) {
-    int8_t clicked = 0;
     if (this_score == WON) {
         // winner
         won_screen();
+        scroll_until_click();
     } else if (other_score == WON) {
         // loser
         lost_screen();
+        scroll_until_click();
     }
+}
 
+void scroll_until_click(void) {
+    int8_t clicked = 0;
     while (!clicked) {
         navswitch_update ();
 
