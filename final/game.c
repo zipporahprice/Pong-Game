@@ -149,9 +149,11 @@ int main (void)
         } // is their turn:
         else if (isTurn == 1 && count >= speed) {
             // if ball hits the paddle
-            if (hits_paddle(bar_get_position())) {
+            int8_t hit_code = hits_paddle(bar_get_position());
+            if (hit_code != NOT_HIT) {
                 paddle_bounce();
                 speed -= 3;
+                set_ball_velocity(hit_code, get_velocity().y);
             }
             // if ball hits the back wall, opponent gains a point - send updated scores
             if (hits_back_wall()) {

@@ -4,6 +4,11 @@
 #define LAST_ROW 6
 #define BACK_ROW 4
 
+#define NOT_HIT -2
+#define LEFT -1
+#define STRAIGHT 0
+#define RIGHT 1
+
 #include "ledmat.h"
 #include "helper.h"
 
@@ -13,7 +18,7 @@ Vector_t get_ball_position(void);
 
 Vector_t get_velocity(void);
 
-bool hits_paddle(Vector_t bar_position);
+int8_t hits_paddle(Vector_t bar_position);
 
 void paddle_bounce(void);
 

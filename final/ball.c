@@ -17,11 +17,24 @@ Vector_t get_velocity() {
     return velocity;
 }
 
-bool hits_paddle(Vector_t bar_position)
+int8_t hits_paddle(Vector_t bar_position)
 {
-    return (ball_position.y == bar_position.y - 1) && 
+    if (!((ball_position.y == bar_position.y - 1) && 
             (0 <= (ball_position.x - bar_position.x)) && 
-            ((ball_position.x - bar_position.x) < BAR_LENGTH);
+            ((ball_position.x - bar_position.x) < BAR_LENGTH))) {
+                return NOT_HIT;
+            }
+
+    if (ball_position.x == bar_position.x) {
+        // hit on left
+        return RIGHT;
+    } else if (ball_position.x == (bar_position.x + 1)) {
+        // hit in middle
+        return STRAIGHT;
+    } else (ball_position.x == (ball_position.x + 2)) {
+        // hit on right
+        return LEFT;
+    }
 }
 
 void paddle_bounce()
