@@ -27,28 +27,59 @@ void display_character (char character)
     tinygl_text (buffer);
 }
 
-int8_t generate_ball_packet(int8_t row_position, int8_t direction) {
-    int8_t packet = 1;
-    packet += (BALL_PACKET << 7);
-    packet += (row_position << 4);
-    packet += (((direction*-1)+1) << 2);
-    return packet;
+// int8_t generate_ball_packet(int8_t row_position, int8_t direction) {
+//     int8_t packet = 1;
+//     packet += (BALL_PACKET << 7);
+//     packet += (row_position << 4);
+//     packet += (((direction*-1)+1) << 2);
+//     return packet;
+// }
+
+// void parse_ball_packet(int8_t packet) {
+//     int8_t packet_type = (packet & (1 << 7)) >> 7;
+//     int8_t row_position = (packet >> 4) & 0b111;
+//     int8_t y_direction = ((packet >> 2) & 0b11) - 1; 
+
+//     switch (packet_type)
+//     {
+//         case SCORE_PACKET:
+//             break;
+        
+//         case BALL_PACKET:
+//             set_ball_position(row_position, 0);
+//             set_ball_velocity(y_direction, 1);
+//             break;
+//     }
+// }
+
+void send_ball_packet(int8_t row_position, int8_t direction) {
+    ir_uart_putc(BALL_PACKET);
+    ir_uart_putc(row_position);
+    ir_uart_putc(direction);
 }
 
-void parse_ball_packet(int8_t packet) {
-    int8_t packet_type = (packet & (1 << 7)) >> 7;
-    int8_t row_position = (packet >> 4) & 0b111;
-    int8_t y_direction = ((packet >> 2) & 0b11) - 1; 
+void receive_packet() {
+    int8_t packet_type = ir_uart_getc();
+    switch (packet_type) {
+        case (BALL_PACKET):
+            set_ball_position(ir_uart_getc(), 0);
+            set_ball_velocity(ir_uart_getc(), 1);
+            break;
+    }
+}
 
-    switch (packet_type)
-    {
-        case SCORE_PACKET:
-            break;
-        
-        case BALL_PACKET:
-            set_ball_position(row_position, 0);
-            set_ball_velocity(y_direction, 1);
-            break;
+/**
+ * Blocks until packet acknowledgement received 
+*/
+void send(int8_t packet) {
+    int8_t packet_received = 0;
+    while (packet_received == 0) {
+        if (ir_uart_write_ready_p()) {
+            ir_uart_putc(packet);
+        }
+        if (ir_uart_read_ready_p()) {
+            packet_received = ir_uart_getc();
+        }
     }
 }
 
@@ -77,8 +108,6 @@ int main (void)
     while (order == -1) {
         navswitch_update ();
         uint8_t data;
-
-
         // On button push, sends a data package 1: "I want to be first!"
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
             ir_uart_putc(1);
@@ -125,8 +154,7 @@ int main (void)
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
-                uint8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x);
-                ir_uart_putc(packet); // send passover data
+                send_ball_packet(get_ball_position().x, get_velocity().x);
             }
             if (hits_side()) {
                 wall_bounce();
@@ -136,10 +164,8 @@ int main (void)
             count = 0;
         } else if (isTurn == 0) {
             if (ir_uart_read_ready_p()) {
-                uint8_t received_data = 0;
-                received_data = ir_uart_getc();
+                receive_packet();
                 isTurn = 1;
-                parse_ball_packet(received_data);
             }
         }
 
