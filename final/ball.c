@@ -34,11 +34,10 @@ bool hits_back_wall()
     return ball_position.y >= BACK_ROW;
 }
 
-void wall_stop()
+void ball_stop()
 {
     velocity.x = 0;
     velocity.y = 0;
-    ball_init();
 }
 
 bool hits_side()

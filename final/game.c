@@ -40,7 +40,7 @@ void send_ball_packet(int8_t row_position, int8_t direction) {
 /**
  * Sends the current scores to the other player
 */
-void send_score_packet() {
+void send_score_packet(void) {
     ir_uart_putc(SCORE_PACKET);
     ir_uart_putc(this_score);
     ir_uart_putc(other_score);
@@ -107,7 +107,7 @@ int8_t turn_handshake(void) {
     return order;
 }
 
-void check_score()
+void check_score(void)
 {
     if (this_score == WON) {
         // do won screen
@@ -134,29 +134,42 @@ int main (void)
     int8_t count = 0;
     int8_t speed = 40;
 
-    int8_t isTurn = turn_handshake();
+    // int8_t isTurn = turn_handshake();
+    int8_t isTurn = 1;
 
     while(1)
     {
+        button_update();
+        if (button_push_event_p(BUTTON1)) {
+            while (1) {
+                ledmat_display_column(get_ball_position().x, 0);
+                ledmat_display_column(get_ball_position().y, 1);
+                ledmat_display_column(get_velocity().x, 2);
+                ledmat_display_column(get_velocity().y, 3);
+            }
+        }
         pacer_wait();
         if (isTurn == 0) {
             if (ir_uart_read_ready_p()) {
                 receive_packet();
                 isTurn = 1;
             }
-        } else if (isTurn == 1 && count == speed) {
+        } else if (isTurn == 1 && count >= speed) {
             if (hits_paddle(bar_get_position())) {
                 paddle_bounce();
-                speed -= 5;
+                speed -= 3;
             }
             // if it hits the back wall, send updated scores
             if (hits_back_wall()) {
                 send_score_packet();
-                wall_stop();
+                ball_init();
+                ball_stop();
+                speed = 40;
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
                 send_ball_packet(get_ball_position().x, get_velocity().x);
+                ball_stop();
             }
             if (hits_side()) {
                 wall_bounce();
