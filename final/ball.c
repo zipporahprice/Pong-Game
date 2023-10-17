@@ -31,7 +31,7 @@ int8_t hits_paddle(Vector_t bar_position)
     } else if (ball_position.x == (bar_position.x + 1)) {
         // hit in middle
         return STRAIGHT;
-    } else (ball_position.x == (ball_position.x + 2)) {
+    } else {
         // hit on right
         return LEFT;
     }
