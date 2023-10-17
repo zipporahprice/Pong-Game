@@ -1,6 +1,6 @@
 # Pong Game - ENCE260 Assignment
 
-##### Developed by Zipporah Price and Jake Dalton.
+#### Developed by Zipporah Price and Jake Dalton.
 
 This project is an implementation of a 'Pong' game, playable only by using two UCFK4 microcontrollers.
 
