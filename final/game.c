@@ -81,28 +81,26 @@ int main (void)
 
         // On button push, sends a data package 1: "I want to be first!"
         if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
-            for (int i= 0; i < 5; i++) {
-                ir_uart_putc(1);
-            }
+            ir_uart_putc(1);
         }
         
         // Receives any messages sent by the other board
-        data = ir_uart_getc();
-        switch (data) {
-            // other board has already said they want to be first.
-            case 1:
-                order = 2;
-                for (int i=0; i < 5; i++) {
+        if (ir_uart_read_ready_p()) {
+            data = ir_uart_getc();
+            switch (data) {
+                // other board has already said they want to be first.
+                case 1:
+                    order = 2;
                     ir_uart_putc(2); // send an acknowledgement
-                }
-                isTurn = 0;
-                break;
+                    isTurn = 0;
+                    break;
 
-            // other board has admitted defeat, this board is first
-            case 2:
-                order = 1;
-                isTurn = 1;
-                break;
+                // other board has admitted defeat, this board is first
+                case 2:
+                    order = 1;
+                    isTurn = 1;
+                    break;
+            }
         }
         tinygl_update();
     }
@@ -128,9 +126,7 @@ int main (void)
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;
                 uint8_t packet = generate_ball_packet(get_ball_position().x, get_velocity().x);
-                for (int i=0; i < 10; i++) {
-                    ir_uart_putc(packet); // send passover data
-                }
+                ir_uart_putc(packet); // send passover data
             }
             if (hits_side()) {
                 wall_bounce();
@@ -139,11 +135,12 @@ int main (void)
             update_ball_position();
             count = 0;
         } else if (isTurn == 0) {
-
-            uint8_t received_data = 0;
-            received_data = ir_uart_getc();
-            isTurn = 1;
-            parse_ball_packet(received_data);
+            if (ir_uart_read_ready_p()) {
+                uint8_t received_data = 0;
+                received_data = ir_uart_getc();
+                isTurn = 1;
+                parse_ball_packet(received_data);
+            }
         }
 
         // handle bar movement
