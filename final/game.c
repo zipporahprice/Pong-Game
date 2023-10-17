@@ -13,9 +13,6 @@
 #include "displays.h"
 #include "ir_uart.h"
 
-#define PACER_RATE 500
-#define MESSAGE_RATE 10
-
 #define SCORE_PACKET 0
 #define BALL_PACKET 1
 #define WON 3
@@ -62,31 +59,46 @@ void receive_packet(void) {
 
 
 int8_t turn_handshake(void) {
-        int8_t order = -1;
+    int8_t order = -1;
+    welcome_screen();
     // Handle who goes first
     while (order == -1) {
+        pacer_wait();
         navswitch_update ();
-        uint8_t data;
-        // On button push, sends a data package 1: "I want to be first!"
-        if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
-            ir_uart_putc(1);
-        }
-        
-        // Receives any messages sent by the other board
-        if (ir_uart_read_ready_p()) {
-            data = ir_uart_getc();
-            switch (data) {
-                // other board has already said they want to be first.
-                case 1:
-                    order = 0;
-                    ir_uart_putc(2); // send an acknowledgement
-                    break;
 
-                // other board has admitted defeat, this board is first
-                case 2:
-                    order = 1;
-                    break;
+        // uint8_t data;
+        // // On button push, sends a data package 1: "I want to be first!"
+        // if (navswitch_push_event_p(NAVSWITCH_PUSH)) { 
+        //     ir_uart_putc(1);
+        // }
+        
+        // // Receives any messages sent by the other board
+        // if (ir_uart_read_ready_p()) {
+        //     data = ir_uart_getc();
+        //     switch (data) {
+        //         // other board has already said they want to be first.
+        //         case 1:
+        //             order = 0;
+        //             ir_uart_putc(2); // send an acknowledgement
+        //             break;
+
+        //         // other board has admitted defeat, this board is first
+        //         case 2:
+        //             order = 1;
+        //             break;
+        //     }
+        // }
+        
+
+
+        if (ir_uart_read_ready_p()) {
+            if (ir_uart_getc() == 'p') {
+                order = 0;
             }
+        }
+        if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
+            ir_uart_putc('p');
+            order = 1;
         }
         tinygl_update();
     }
@@ -108,21 +120,19 @@ void check_score(void) {
 void init_game(void) {
     system_init();
     ledmat_init();
-    pacer_init (100);
+    pacer_init (PACER_RATE);
     navswitch_init();
-    tinygl_init (PACER_RATE);
-    tinygl_font_set (&font5x7_1);
-    tinygl_text_speed_set (MESSAGE_RATE);
+    init_display();
     ir_uart_init();
     button_init();
     ball_init();
     bar_init();
 
     count = 0;
-    speed = 40;
+    speed = 250;
 
-    // isTurn = turn_handshake();
-    isTurn = 1;
+    isTurn = turn_handshake();
+    // isTurn = 1;
 }
 
 
@@ -131,10 +141,11 @@ int main (void)
     init_game();
 
     // do welcome screen
-    welcome_screen();
+    //welcome_screen();
 
     while(1)
     {
+
         button_update();
         if (button_push_event_p(BUTTON1)) {
             while (1) {
@@ -160,7 +171,7 @@ int main (void)
                 send_score_packet();
                 ball_init();
                 ball_stop();
-                speed = 40;
+                speed = 250;
             } 
             if (get_ball_position().y < 0 && get_velocity().y == -1) {
                 isTurn = 0;

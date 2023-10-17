@@ -1,6 +1,12 @@
 #ifndef DISPLAYS_H
 #define DISPLAYS_H
 
+#define PACER_RATE 100
+#define MESSAGE_RATE 2
+#define TINY_INIT 500
+
+void init_display(void);
+
 void display_character (char character);
 
 void toggle_display(int8_t isTurn);
