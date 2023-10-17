@@ -66,11 +66,6 @@ void won_screen(void)
 {
     tinygl_text("WINNER");
 
-    while(1)
-    {
-        pacer_wait();
-        tinygl_update();
-    }
 }
 
 // loser screen
@@ -78,9 +73,4 @@ void lost_screen(void)
 {
     tinygl_text("LOSER");
 
-    while(1)
-    {
-        pacer_wait();
-        tinygl_update();
-    }
 }
