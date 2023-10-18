@@ -1,7 +1,7 @@
 # File:   Makefile
-# Author: M. P. Hayes, UCECE
-# Date:   11 Sep 2010
-# Descr:  Makefile for game
+# Authors: Zipporah Price, Jake Dalton
+# Date:   17 Oct 2023
+# Descr:  Makefile for Pong game
 
 CC = gcc
 CFLAGS = -Wall -Wstrict-prototypes -Wextra -g -I. -I../../utils -I../../drivers -I../../drivers/test

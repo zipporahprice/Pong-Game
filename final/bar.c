@@ -48,7 +48,7 @@ Vector_t bar_get_position()
 */
 void bar_update()
 {
-    navswitch_update ();
+    navswitch_update();
     if (navswitch_push_event_p(NAVSWITCH_NORTH)) { 
         position.x = max(0, position.x - 1);
     }

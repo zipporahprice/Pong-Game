@@ -66,7 +66,7 @@ void scroll_until_click(void)
 {
     bool is_clicked = 0;
     while (!is_clicked) {
-        navswitch_update ();
+        navswitch_update();
         if (ir_uart_read_ready_p()) {
             if (ir_uart_getc() == 'X') {
                 is_clicked = TRUE;
@@ -78,6 +78,46 @@ void scroll_until_click(void)
         }
         tinygl_update();
     }
+}
+
+/**
+ * Decides who starts the game based on which player pushes the navswitch first.
+*/
+int8_t decide_turn(void)
+{
+    int8_t turn_order = -1;
+    welcome_screen();
+    // Handle who goes first
+    while (turn_order == -1) {
+        navswitch_update();
+        if (ir_uart_read_ready_p()) {
+            if (ir_uart_getc() == 'X') {
+                turn_order = 0;
+            }
+        }
+        if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
+            ir_uart_putc('X');
+            turn_order = 1;
+        }
+        tinygl_update();
+    }
+    return turn_order;
+}
+
+/**
+ * Resets the game state back to the start.
+*/
+void refresh_game(void)
+{
+    tick_count = 0;
+    speed = STARTING_SPEED;
+    player_score = 0;
+    opponent_score = 0;
+    is_turn = decide_turn();
+    ledmat_init();
+    ball_init();
+    bar_init();
+    send_score_packet();
 }
 
 /**
@@ -121,57 +161,17 @@ void receive_packet(void)
 }
 
 /**
- * Decides who starts the game based on which player pushes the navswitch first.
-*/
-int8_t decide_turn(void)
-{
-    int8_t turn_order = -1;
-    welcome_screen();
-    // Handle who goes first
-    while (turn_order == -1) {
-        navswitch_update ();
-        if (ir_uart_read_ready_p()) {
-            if (ir_uart_getc() == 'X') {
-                turn_order = 0;
-            }
-        }
-        if (navswitch_push_event_p(NAVSWITCH_PUSH)) {
-            ir_uart_putc('X');
-            turn_order = 1;
-        }
-        tinygl_update();
-    }
-    return turn_order;
-}
-
-/**
  * Initialises the libraries and resets the game state.
 */
 void init_game(void)
 {
     system_init();
-    pacer_init (PACER_RATE);
+    pacer_init(PACER_RATE);
     navswitch_init();
     init_display();
     ir_uart_init();
     button_init();
     refresh_game();
-}
-
-/**
- * Resets the game state back to the start.
-*/
-void refresh_game(void)
-{
-    tick_count = 0;
-    speed = STARTING_SPEED;
-    player_score = 0;
-    opponent_score = 0;
-    is_turn = decide_turn();
-    ledmat_init();
-    ball_init();
-    bar_init();
-    send_score_packet();
 }
 
 /**
